@@ -1,0 +1,20 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "fic"
+authors = [{name = "Alyetama", email = "56323389+Alyetama@users.noreply.github.com"}]
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: MIT License"]
+dynamic = ["version", "description"]
+dependencies = [
+    "tqdm",
+    "Pillow"
+]
+
+[project.urls]
+Home = "https://github.comm/Alyetama/fic"
+
+[project.scripts]
+fic = "fic:cli.main"

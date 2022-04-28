@@ -142,7 +142,7 @@ def opts() -> argparse.Namespace:
     parser.add_argument(
         'path',
         nargs='+',
-        help='Path to a single file/directory or multiple file/directory')
+        help='Path to a single file/directory or multiple files/directories')
     return parser.parse_args()
 
 

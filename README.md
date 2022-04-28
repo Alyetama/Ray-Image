@@ -28,7 +28,7 @@ usage: fic [-h] [-o OUTPUT_DIR] [-q QUALITY] [--overwrite] [-N] [-s]
 
 positional arguments:
   path                  Path to a single file/directory or multiple
-                        file/directory
+                        files/directories
 
 optional arguments:
   -h, --help            show this help message and exit

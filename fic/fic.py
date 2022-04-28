@@ -148,6 +148,7 @@ def opts() -> argparse.Namespace:
 
 def main(path, output_dir, quality, no_subsampling, silent, overwrite,
          **kwargs) -> None:
+    session_start = time.time()
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
     if silent:
@@ -198,18 +199,17 @@ def main(path, output_dir, quality, no_subsampling, silent, overwrite,
         ray.shutdown()
 
     else:
-        results = []
-        for n, file in enumerate(files):
-            results.append(
-                compress(file=file,
-                         quality=quality,
-                         overwrite=overwrite,
-                         no_subsampling=no_subsampling,
-                         output_dir=output_dir))
+        return compress(file=file,
+                        quality=quality,
+                        overwrite=overwrite,
+                        no_subsampling=no_subsampling,
+                        output_dir=output_dir)
 
+    files = [x for x in files if x]
     files_size = round(
         sum([Path(x).stat().st_size
              for x in files if Path(x).exists()]) / 1e+6, 2)
+    results = [x for x in results if x]
     results_size = round(
         sum([Path(x).stat().st_size
              for x in results if Path(x).exists()]) / 1e+6, 2)
@@ -218,6 +218,7 @@ def main(path, output_dir, quality, no_subsampling, silent, overwrite,
     print('\nTotal:')
     print(f'    Before: \033[31m{files_size} MB\033[39m')
     print(f'    After: \033[32m{results_size} MB {change}\033[39m')
+    print(f'Took: {round(time.time() - session_start, 2)}s')
     return results
 
 

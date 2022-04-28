@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 from .fic import main as _main, opts
 
 

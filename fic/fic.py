@@ -40,7 +40,7 @@ def size_change(original_size, compressed_size, file, out_file):
 
 
 def compress(file: str,
-             quality: int = 90,
+             quality: int = 70,
              overwrite: bool = False,
              no_subsampling: bool = False,
              output_dir: Optional[str] = None) -> Union[str, None]:
@@ -120,9 +120,9 @@ def opts() -> argparse.Namespace:
         help='Output directory (default: next to original file)')
     parser.add_argument('-q',
                         '--quality',
-                        default=80,
+                        default=70,
                         type=int,
-                        help='Output image quality (default: 80)')
+                        help='Output image quality (default: 70)')
     parser.add_argument('--overwrite',
                         action='store_true',
                         help='Overwrite the original image')

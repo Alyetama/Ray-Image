@@ -55,10 +55,8 @@ def compress(file: str,
         return
 
     if not imghdr.what(file):
-        print(
-            f'\033[41m`{file}` does not appear to be a valid image file! ' \
-            'Skipping...\033[49m'
-        )
+        print(f'\033[41m`{file}` does not appear to be a valid image file! '
+              'Skipping...\033[49m')
         return
 
     file = Path(file)
@@ -132,9 +130,8 @@ def opts() -> argparse.Namespace:
         '-N',
         '--no-subsampling',
         action='store_true',
-        help=
-        'Turn off subsampling and retain the original image setting (JPEG only)'
-    )
+        help='Turn off subsampling and retain the original image setting '
+        '(JPEG only)')
     parser.add_argument('-s',
                         '--silent',
                         action='store_true',
@@ -147,7 +144,7 @@ def opts() -> argparse.Namespace:
 
 
 def main(path, output_dir, quality, no_subsampling, silent, overwrite,
-         **kwargs) -> None:
+         **kwargs) -> Union[list, str]:
     session_start = time.time()
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
@@ -199,7 +196,7 @@ def main(path, output_dir, quality, no_subsampling, silent, overwrite,
         ray.shutdown()
 
     else:
-        return compress(file=file,
+        return compress(file=files[0],
                         quality=quality,
                         overwrite=overwrite,
                         no_subsampling=no_subsampling,

@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.urls]
-Home = "https://github.comm/Alyetama/fic"
+Home = "https://github.com/Alyetama/fast-image-compression"
 
 [project.scripts]
 fic = "fic:cli.main"

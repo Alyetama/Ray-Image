@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import argparse
+import copy
 import imghdr
 import shutil
 import signal
@@ -63,7 +64,7 @@ def compress(file: str,
     file = Path(file)
 
     if overwrite:
-        out_file = file
+        out_file = copy.deepcopy(file)
     else:
         out_file = f'{file.with_suffix("")}_compressed{file.suffix}'
 
@@ -107,8 +108,9 @@ def compress(file: str,
 
     change = size_change(original_size, compressed_size, file, out_file)
 
-    if overwrite:
-        file.unlink()
+    if to_jpeg and overwrite:
+        if Path(out_file).name != file.name:
+            file.unlink()
 
     took = round(time.time() - start, 2)
     if sys.stdout.isatty():

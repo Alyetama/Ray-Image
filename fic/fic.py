@@ -43,6 +43,7 @@ def compress(file: str,
              quality: int = 70,
              overwrite: bool = False,
              no_subsampling: bool = False,
+             to_jpeg: bool = False,
              output_dir: Optional[str] = None) -> Union[str, None]:
 
     start = time.time()
@@ -86,7 +87,12 @@ def compress(file: str,
                 quality=quality,
                 subsampling='keep')
     else:
-        im.save(out_file, f_suffix, optimize=True, quality=quality)
+        if to_jpeg:
+            im = im.convert('RGB')
+            out_file = Path(out_file).with_suffix('.jpg')
+            im.save(out_file, optimize=True, quality=quality)
+        else:
+            im.save(out_file, f_suffix, optimize=True, quality=quality)
 
     original_size = str(Path(file).stat().st_size / 1000)[:5]
     compressed_size = str(Path(out_file).stat().st_size / 1000)[:5]
@@ -132,6 +138,10 @@ def opts() -> argparse.Namespace:
         action='store_true',
         help='Turn off subsampling and retain the original image setting '
         '(JPEG only)')
+    parser.add_argument('-j',
+                        '--to-jpeg',
+                        action='store_true',
+                        help='Conver the image to .JPEG')
     parser.add_argument('-s',
                         '--silent',
                         action='store_true',
@@ -143,7 +153,7 @@ def opts() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main(path, output_dir, quality, no_subsampling, silent, overwrite,
+def main(path, output_dir, quality, no_subsampling, silent, overwrite, to_jpeg,
          **kwargs) -> Union[list, str]:
     session_start = time.time()
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
@@ -189,6 +199,7 @@ def main(path, output_dir, quality, no_subsampling, silent, overwrite,
                                      quality=quality,
                                      overwrite=overwrite,
                                      no_subsampling=no_subsampling,
+                                     to_jpeg=to_jpeg,
                                      output_dir=output_dir))
         results = []
         for future in tqdm(futures):

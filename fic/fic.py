@@ -10,7 +10,7 @@ import sys
 import time
 from glob import glob
 from pathlib import Path
-from typing import Optional, Union
+from typing import IO, Optional, Union
 
 import ray
 from PIL import Image
@@ -45,7 +45,8 @@ def compress(file: str,
              overwrite: bool = False,
              no_subsampling: bool = False,
              to_jpeg: bool = False,
-             output_dir: Optional[str] = None) -> Union[str, None]:
+             output_dir: Optional[str] = None,
+             save_to: Optional[IO] = None) -> Union[str, None]:
 
     start = time.time()
 
@@ -63,7 +64,9 @@ def compress(file: str,
 
     file = Path(file)
 
-    if overwrite:
+    if save_to:
+        out_file = save_to
+    elif overwrite:
         out_file = copy.deepcopy(file)
     else:
         out_file = f'{file.with_suffix("")}_compressed{file.suffix}'
@@ -76,10 +79,14 @@ def compress(file: str,
         out_file = f'{out_parent}/{Path(out_file).name}'
 
     im = Image.open(file)
-    if file.suffix.lower() in ['.jpg', '.jpeg']:
-        f_suffix = 'JPEG'
+
+    if file.suffix:
+        if file.suffix.lower() in ['.jpg', '.jpeg']:
+            f_suffix = 'JPEG'
+        else:
+            f_suffix = file.suffix.upper()[1:]
     else:
-        f_suffix = file.suffix.upper()[1:]
+        f_suffix = 'JPEG'
 
     if no_subsampling and f_suffix == 'JPEG':
         im.save(out_file,
@@ -89,9 +96,10 @@ def compress(file: str,
                 subsampling='keep')
     else:
         if to_jpeg:
-            out_file = Path(out_file).with_suffix('.jpg')
+            if not save_to:
+                out_file = Path(out_file).with_suffix('.jpg')
             im = im.convert('RGB')
-            im.save(out_file, optimize=True, quality=quality)
+            im.save(out_file, f_suffix, optimize=True, quality=quality)
         else:
             im.save(out_file, f_suffix, optimize=True, quality=quality)
 
@@ -108,7 +116,7 @@ def compress(file: str,
 
     change = size_change(original_size, compressed_size, file, out_file)
 
-    if to_jpeg and overwrite:
+    if (to_jpeg and overwrite) and not save_to:
         if Path(out_file).name != file.name:
             file.unlink()
 

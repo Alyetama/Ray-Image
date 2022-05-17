@@ -88,8 +88,8 @@ def compress(file: str,
                 subsampling='keep')
     else:
         if to_jpeg:
-            im = im.convert('RGB')
             out_file = Path(out_file).with_suffix('.jpg')
+            im = im.convert('RGB')
             im.save(out_file, optimize=True, quality=quality)
         else:
             im.save(out_file, f_suffix, optimize=True, quality=quality)
@@ -107,8 +107,15 @@ def compress(file: str,
 
     change = size_change(original_size, compressed_size, file, out_file)
 
+    if overwrite:
+        file.unlink()
+
     took = round(time.time() - start, 2)
-    print(f'🚀 {f_name}: {o_size} ==> {c_size} {change} | {took}s')
+    if sys.stdout.isatty():
+        print(f'🚀 {f_name}: {o_size} ==> {c_size} {change} | {took}s')
+    else:
+        print(f'🚀 {display_fname}: {original_size} kB ==> {compressed_size} '
+            f'kB {change} | {took}s')
     return out_file
 
 

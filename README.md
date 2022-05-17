@@ -23,24 +23,23 @@ pip install fic
 ## Usage
 
 ```
-usage: fic [-h] [-o OUTPUT_DIR] [-q QUALITY] [--overwrite] [-N] [-s]
-           path [path ...]
+usage: fic [-h] [-o OUTPUT_DIR] [-q QUALITY] [--overwrite] [-N] [-j] [-s] path [path ...]
 
 positional arguments:
-  path                  Path to a single file/directory or multiple
-                        files/directories
+  path                  Path to a single file/directory or multiple files/directories
 
 optional arguments:
   -h, --help            show this help message and exit
   -o OUTPUT_DIR, --output-dir OUTPUT_DIR
                         Output directory (default: next to original file)
   -q QUALITY, --quality QUALITY
-                        Output image quality (default: 80)
+                        Output image quality (default: 70)
   --overwrite           Overwrite the original image
-  -N, --no-subsampling  Turn off subsampling and retain the original image
-                        setting (JPEG only)
+  -N, --no-subsampling  Turn off subsampling and retain the original image setting (JPEG
+                        only)
+  -j, --to-jpeg         Convert the image(s) to .JPEG
   -s, --silent          Silent mode
-  ```
+```
 
 ## Examples
 

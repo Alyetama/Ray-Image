@@ -141,7 +141,7 @@ def opts() -> argparse.Namespace:
     parser.add_argument('-j',
                         '--to-jpeg',
                         action='store_true',
-                        help='Conver the image to .JPEG')
+                        help='Convert the image(s) to .JPEG')
     parser.add_argument('-s',
                         '--silent',
                         action='store_true',

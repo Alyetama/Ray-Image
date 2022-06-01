@@ -2,9 +2,11 @@
 
 🚀 Fast image compression for large number of images with Ray library.
 
+[![Supported Python versions](https://img.shields.io/badge/Python-%3E=3.6-blue.svg)](https://www.python.org/downloads/) [![PEP8](https://img.shields.io/badge/Code%20style-PEP%208-orange.svg)](https://www.python.org/dev/peps/pep-0008/) 
+
 ## Requirements
 
-- 🐍 [Python>=3.6, <3.10](https://www.python.org/downloads/)
+- 🐍 [Python>=3.6](https://www.python.org/downloads/)
 - ⚡ [Ray>=1.0.0](https://github.com/ray-project/ray)
 
 To install `ray`, run\*:

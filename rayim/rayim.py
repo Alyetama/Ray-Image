@@ -10,7 +10,7 @@ import sys
 import time
 from glob import glob
 from pathlib import Path
-from typing import IO, Optional, Union
+from typing import Optional, Union
 
 import ray
 from PIL import Image
@@ -45,8 +45,7 @@ def compress(file: str,
              overwrite: bool = False,
              no_subsampling: bool = False,
              to_jpeg: bool = False,
-             output_dir: Optional[str] = None,
-             save_to: Optional[IO] = None) -> Union[str, None]:
+             output_dir: Optional[str] = None) -> Union[str, None]:
 
     start = time.time()
 
@@ -64,9 +63,7 @@ def compress(file: str,
 
     file = Path(file)
 
-    if save_to:
-        out_file = copy.deepcopy(save_to)
-    elif overwrite:
+    if overwrite:
         out_file = copy.deepcopy(file)
     else:
         out_file = f'{file.with_suffix("")}_compressed{file.suffix}'
@@ -88,7 +85,7 @@ def compress(file: str,
     else:
         f_suffix = 'JPEG'
 
-    if file.suffix.lower() == '.png':
+    if file.suffix.lower() == '.png' and not to_jpeg:
         quality = 100
 
     if no_subsampling and f_suffix == 'JPEG':
@@ -99,12 +96,10 @@ def compress(file: str,
                 subsampling='keep')
     else:
         if to_jpeg:
-            if not save_to:
-                out_file = Path(out_file).with_suffix('.jpg')
+            f_suffix = 'JPEG'
+            out_file = Path(out_file).with_suffix('.jpg')
             im = im.convert('RGB')
-            im.save(out_file, f_suffix, optimize=True, quality=quality)
-        else:
-            im.save(out_file, f_suffix, optimize=True, quality=quality)
+        im.save(out_file, f_suffix, optimize=True, quality=quality)
 
     original_size = str(Path(file).stat().st_size / 1000)[:5]
     compressed_size = str(Path(out_file).stat().st_size / 1000)[:5]
@@ -119,7 +114,7 @@ def compress(file: str,
 
     change = size_change(original_size, compressed_size, file, out_file)
 
-    if (to_jpeg and overwrite) and not save_to:
+    if to_jpeg and overwrite:
         if Path(out_file).name != file.name:
             file.unlink()
 
@@ -174,12 +169,12 @@ def opts() -> argparse.Namespace:
 
 
 def rayim(path,
-        output_dir=None,
-        quality=70,
-        no_subsampling=False,
-        silent=False,
-        overwrite=False,
-        to_jpeg=False) -> Union[list, str]:
+          output_dir=None,
+          quality=70,
+          no_subsampling=False,
+          silent=False,
+          overwrite=False,
+          to_jpeg=False) -> Union[list, str]:
     session_start = time.time()
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
@@ -263,12 +258,12 @@ def rayim(path,
 def main():
     args = opts()
     rayim(path=args.path,
-        output_dir=args.output_dir,
-        quality=args.quality,
-        no_subsampling=args.no_subsampling,
-        silent=args.silent,
-        overwrite=args.overwrite,
-        to_jpeg=args.to_jpeg)
+          output_dir=args.output_dir,
+          quality=args.quality,
+          no_subsampling=args.no_subsampling,
+          silent=args.silent,
+          overwrite=args.overwrite,
+          to_jpeg=args.to_jpeg)
 
 
 if __name__ == '__main__':

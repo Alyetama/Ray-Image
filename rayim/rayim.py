@@ -65,7 +65,7 @@ def compress(file: str,
     file = Path(file)
 
     if save_to:
-        out_file = save_to
+        out_file = copy.deepcopy(save_to)
     elif overwrite:
         out_file = copy.deepcopy(file)
     else:
@@ -87,6 +87,9 @@ def compress(file: str,
             f_suffix = file.suffix.upper()[1:]
     else:
         f_suffix = 'JPEG'
+
+    if file.suffix.lower() == '.png':
+        quality = 100
 
     if no_subsampling and f_suffix == 'JPEG':
         im.save(out_file,
@@ -125,7 +128,7 @@ def compress(file: str,
         print(f'🚀 {f_name}: {o_size} ==> {c_size} {change} | {took}s')
     else:
         print(f'🚀 {display_fname}: {original_size} kB ==> {compressed_size} '
-            f'kB {change} | {took}s')
+              f'kB {change} | {took}s')
     return out_file
 
 
@@ -145,7 +148,7 @@ def opts() -> argparse.Namespace:
                         '--quality',
                         default=70,
                         type=int,
-                        help='Output image quality (default: 70)')
+                        help='Output image quality (JPEG only; default: 70)')
     parser.add_argument('--overwrite',
                         action='store_true',
                         help='Overwrite the original image')
@@ -170,8 +173,13 @@ def opts() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main(path, output_dir, quality, no_subsampling, silent, overwrite, to_jpeg,
-         **kwargs) -> Union[list, str]:
+def rayim(path,
+        output_dir=None,
+        quality=70,
+        no_subsampling=False,
+        silent=False,
+        overwrite=False,
+        to_jpeg=False) -> Union[list, str]:
     session_start = time.time()
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
@@ -212,23 +220,28 @@ def main(path, output_dir, quality, no_subsampling, silent, overwrite, to_jpeg,
         futures = []
         for file in files:
             futures.append(
-                compress_many.remote(file=file,
-                                     quality=quality,
-                                     overwrite=overwrite,
-                                     no_subsampling=no_subsampling,
-                                     to_jpeg=to_jpeg,
-                                     output_dir=output_dir))
+                compress_many.remote(
+                    file=file,
+                    quality=quality,
+                    overwrite=overwrite,
+                    no_subsampling=no_subsampling,
+                    output_dir=output_dir,
+                    to_jpeg=to_jpeg,
+                ))
         results = []
         for future in tqdm(futures):
             results.append(ray.get(future))
         ray.shutdown()
 
     else:
-        return compress(file=files[0],
-                        quality=quality,
-                        overwrite=overwrite,
-                        no_subsampling=no_subsampling,
-                        output_dir=output_dir)
+        return compress(
+            file=files[0],
+            quality=quality,
+            overwrite=overwrite,
+            no_subsampling=no_subsampling,
+            output_dir=output_dir,
+            to_jpeg=to_jpeg,
+        )
 
     files = [x for x in files if x]
     files_size = round(
@@ -247,6 +260,16 @@ def main(path, output_dir, quality, no_subsampling, silent, overwrite, to_jpeg,
     return results
 
 
-if __name__ == '__main__':
+def main():
     args = opts()
-    main(**vars(args))
+    rayim(path=args.path,
+        output_dir=args.output_dir,
+        quality=args.quality,
+        no_subsampling=args.no_subsampling,
+        silent=args.silent,
+        overwrite=args.overwrite,
+        to_jpeg=args.to_jpeg)
+
+
+if __name__ == '__main__':
+    main()

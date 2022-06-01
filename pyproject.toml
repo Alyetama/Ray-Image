@@ -1,20 +1,21 @@
+[tool.poetry]
+name = "rayim"
+version = "0.9.0"
+description = "Fast image compression for large number of images with Ray library."
+authors = ["Mohammad Alyetama <malyetama@pm.me>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+tqdm = "^4.64.0"
+Pillow = "^8.1.1"
+
+[tool.poetry.dev-dependencies]
+
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
-name = "fic"
-authors = [{name = "Alyetama", email = "56323389+Alyetama@users.noreply.github.com"}]
-license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: MIT License"]
-dynamic = ["version", "description"]
-dependencies = [
-    "tqdm",
-    "Pillow"
-]
-
-[project.urls]
-Home = "https://github.com/Alyetama/fast-image-compression"
-
-[project.scripts]
-fic = "fic:cli.main"
+[tool.poetry.scripts]
+rayim = 'rayim:rayim.main'

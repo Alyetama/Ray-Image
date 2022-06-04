@@ -4,13 +4,13 @@
 import argparse
 import copy
 import imghdr
-import shutil
+import io
 import signal
 import sys
 import time
 from glob import glob
 from pathlib import Path
-from typing import Optional, Union
+from typing import IO, Optional, Union
 
 import ray
 from PIL import Image
@@ -27,17 +27,33 @@ def keyboard_interrupt_handler(sig: int, _) -> None:
     sys.exit(1)
 
 
-def size_change(original_size, compressed_size, file, out_file):
+def size_change(original_size: str, compressed_size: str, file: str,
+                out_file: str, overwrite: bool) -> tuple:
     change = str((float(compressed_size) - float(original_size)) /
                  float(original_size) * 100)
     if 0 < float(change):
-        change = f'(\033[31m+{change[:4]}%\033[39m) [Skipped...]'
-        if file and out_file:
-            Path(out_file).unlink()
-            shutil.copy(file, out_file)
+        return (
+            f'(\033[31m+{change[:4]}%\033[39m) [\033[33mSkipped...\033[39m]',
+            False)
     else:
-        change = f'({change[:5]}%)'
-    return change
+        return f'({change[:5]}%)', True
+
+
+def save_img(file_object: Union[IO,
+                                str], im: Image.Image, no_subsampling: bool,
+             f_suffix: str, quality: int, to_jpeg: bool) -> None:
+    if no_subsampling and f_suffix == 'JPEG':
+        im.save(file_object,
+                f_suffix,
+                optimize=True,
+                quality=quality,
+                subsampling='keep')
+    else:
+        if to_jpeg:
+            f_suffix = 'JPEG'
+            im = im.convert('RGB')
+        im.save(file_object, f_suffix, optimize=True, quality=quality)
+    return
 
 
 def compress(file: str,
@@ -90,30 +106,28 @@ def compress(file: str,
     if file.suffix.lower() == '.png' and not to_jpeg:
         quality = 100
 
-    if no_subsampling and f_suffix == 'JPEG':
-        im.save(out_file,
-                f_suffix,
-                optimize=True,
-                quality=quality,
-                subsampling='keep')
+    tmp_img_obj = io.BytesIO()
+    save_img(tmp_img_obj, im, no_subsampling, f_suffix, quality, to_jpeg)
+
+    compressed_size = str(sys.getsizeof(tmp_img_obj) / 1000)[:5]
+
+    file_stem = Path(file).stem
+    if len(file_stem) > 12:
+        dots = '\033[35m...\033[39m'
+        display_fname = f'{file_stem[:12]}{dots}{Path(file).suffix}'
     else:
-        if to_jpeg:
-            f_suffix = 'JPEG'
-            out_file = Path(out_file).with_suffix('.jpg')
-            im = im.convert('RGB')
-        im.save(out_file, f_suffix, optimize=True, quality=quality)
-
-    compressed_size = str(Path(out_file).stat().st_size / 1000)[:5]
-
-    display_fname = Path(file).name
-    if len(display_fname) > 12:
-        display_fname = f'{Path(file).stem[:12]}..{Path(file).suffix}'
+        display_fname = Path(file).name
 
     f_name = f'\033[37m\033[40m{display_fname}\033[49m\033[39m'
     o_size = f'{original_size} kB'
     c_size = f'\033[30m\033[42m{compressed_size} kB\033[49m\033[39m'
 
-    change = size_change(original_size, compressed_size, file, out_file)
+    change, change_exists = size_change(original_size, compressed_size, file,
+                                        out_file, overwrite)
+
+    if change_exists:
+        out_file = Path(out_file).with_suffix('.jpg')
+        save_img(out_file, im, no_subsampling, f_suffix, quality, to_jpeg)
 
     if to_jpeg and overwrite:
         if Path(out_file).name != file.name:
@@ -169,7 +183,7 @@ def opts() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def rayim(path,
+def rayim(path: list,
           output_dir=None,
           quality=70,
           no_subsampling=False,
@@ -226,7 +240,9 @@ def rayim(path,
                 ))
         results = []
         for future in tqdm(futures):
-            results.append(ray.get(future))
+            result = ray.get(future)
+            if result:
+                results.append(result)
         ray.shutdown()
 
     else:
@@ -256,15 +272,15 @@ def rayim(path,
     return results
 
 
-def main():
+def main() -> None:
     args = opts()
-    rayim(path=args.path,
-          output_dir=args.output_dir,
-          quality=args.quality,
-          no_subsampling=args.no_subsampling,
-          silent=args.silent,
-          overwrite=args.overwrite,
-          to_jpeg=args.to_jpeg)
+    _ = rayim(path=args.path,
+              output_dir=args.output_dir,
+              quality=args.quality,
+              no_subsampling=args.no_subsampling,
+              silent=args.silent,
+              overwrite=args.overwrite,
+              to_jpeg=args.to_jpeg)
 
 
 if __name__ == '__main__':

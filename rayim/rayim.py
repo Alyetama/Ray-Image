@@ -63,6 +63,8 @@ def compress(file: str,
 
     file = Path(file)
 
+    original_size = str(Path(file).stat().st_size / 1000)[:5]
+
     if overwrite:
         out_file = copy.deepcopy(file)
     else:
@@ -101,7 +103,6 @@ def compress(file: str,
             im = im.convert('RGB')
         im.save(out_file, f_suffix, optimize=True, quality=quality)
 
-    original_size = str(Path(file).stat().st_size / 1000)[:5]
     compressed_size = str(Path(out_file).stat().st_size / 1000)[:5]
 
     display_fname = Path(file).name

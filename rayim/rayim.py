@@ -27,19 +27,17 @@ def keyboard_interrupt_handler(sig: int, _) -> None:
     sys.exit(1)
 
 
-def size_change(original_size: str, compressed_size: str, file: str,
-                out_file: str, overwrite: bool) -> tuple:
-    change = str((float(compressed_size) - float(original_size)) /
-                 float(original_size) * 100)
-    if 0 < float(change):
+def size_change(original_size: float, compressed_size: float) -> tuple:
+    change = (compressed_size - original_size) / original_size * 100
+    if 0 < change:
         return (
-            f'(\033[31m+{change[:4]}%\033[39m) [\033[33mSkipped...\033[39m]',
-            False)
+            f'(\033[31m+{round(change, 4)}%\033[39m) [\033[33mSkipped...\033['
+            f'39m]', False)
     else:
-        return f'({change[:5]}%)', True
+        return f'({round(change, 4)}%)', True
 
 
-def save_img(file_object: Union[IO,
+def save_img(file_object: Union[IO, Path,
                                 str], im: Image.Image, no_subsampling: bool,
              f_suffix: str, quality: int, to_jpeg: bool) -> None:
     if no_subsampling and f_suffix == 'JPEG':
@@ -53,7 +51,6 @@ def save_img(file_object: Union[IO,
             f_suffix = 'JPEG'
             im = im.convert('RGB')
         im.save(file_object, f_suffix, optimize=True, quality=quality)
-    return
 
 
 def compress(file: str,
@@ -61,7 +58,7 @@ def compress(file: str,
              overwrite: bool = False,
              no_subsampling: bool = False,
              to_jpeg: bool = False,
-             output_dir: Optional[str] = None) -> Union[str, None]:
+             output_dir: Optional[str] = None) -> Optional[str]:
 
     start = time.time()
 
@@ -122,8 +119,8 @@ def compress(file: str,
     o_size = f'{original_size} kB'
     c_size = f'\033[30m\033[42m{compressed_size} kB\033[49m\033[39m'
 
-    change, change_exists = size_change(original_size, compressed_size, file,
-                                        out_file, overwrite)
+    change, change_exists = size_change(float(original_size),
+                                        float(compressed_size))
 
     if change_exists:
         out_file = Path(out_file).with_suffix('.jpg')
@@ -189,7 +186,7 @@ def rayim(path: list,
           no_subsampling=False,
           silent=False,
           overwrite=False,
-          to_jpeg=False) -> Union[list, str]:
+          to_jpeg=False) -> Union[list, Optional[str]]:
     session_start = time.time()
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
@@ -259,15 +256,15 @@ def rayim(path: list,
     files_size = round(
         sum([Path(x).stat().st_size
              for x in files if Path(x).exists()]) / 1e+6, 2)
-    results = [x for x in results if x]
+    results = [str(x) for x in results if x]
     results_size = round(
         sum([Path(x).stat().st_size
              for x in results if Path(x).exists()]) / 1e+6, 2)
 
-    change = size_change(files_size, results_size, None, None)
+    change = size_change(files_size, results_size)
     print('\nTotal:')
     print(f'    Before: \033[31m{files_size} MB\033[39m')
-    print(f'    After: \033[32m{results_size} MB {change}\033[39m')
+    print(f'    After: \033[32m{results_size} MB {change[0]}\033[39m')
     print(f'Took: {round(time.time() - session_start, 2)}s')
     return results
 

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import IO, Optional, Tuple, Union
 
 import ray
-from PIL import Image, JpegImagePlugin, PngImagePlugin
+from PIL import Image
 from tqdm import tqdm
 
 
@@ -38,32 +38,24 @@ def size_change(original_size: float, compressed_size: float) -> tuple:
         return f'({round(change, 4)}%)', True
 
 
-def save_img(file_object: Union[IO, Path,
-                                str], im: Image.Image, no_subsampling: bool,
-             f_suffix: str, quality: int, to_jpeg: bool) -> None:
+def save_img(file_object: Union[IO, Path, str],
+             im: Image.Image,
+             no_subsampling: bool,
+             f_suffix: str,
+             quality: int,
+             to_jpeg: bool,
+             optimize: bool = False) -> None:
     if no_subsampling and f_suffix == 'JPEG':
         im.save(file_object,
                 f_suffix,
-                optimize=True,
+                optimize=optimize,
                 quality=quality,
                 subsampling='keep')
     else:
         if to_jpeg:
             f_suffix = 'JPEG'
             im = im.convert('RGB')
-        im.save(file_object, f_suffix, optimize=True, quality=quality)
-
-
-def resize(im: Union[JpegImagePlugin.JpegImageFile,
-                     PngImagePlugin.PngImageFile],
-           size: Optional[Tuple[int]] = None,
-           div_by: Optional[int] = None):
-    if div_by and size:
-        raise Exception('Can\'t use both `size` and `div_by`!')
-    if div_by and not size:
-        size = [int(x / div_by) for x in im.size]
-    resized_im = im.resize(size, resample=2)
-    return resized_im
+        im.save(file_object, f_suffix, optimize=optimize, quality=quality)
 
 
 def compress(file: str,
@@ -71,7 +63,10 @@ def compress(file: str,
              overwrite: bool = False,
              no_subsampling: bool = False,
              to_jpeg: bool = False,
-             output_dir: Optional[str] = None) -> Optional[str]:
+             size: Optional[Tuple[int]] = None,
+             div_by: Optional[float] = None,
+             output_dir: Optional[str] = None,
+             optimize: bool = False) -> Optional[str]:
 
     start = time.time()
 
@@ -119,7 +114,13 @@ def compress(file: str,
         quality = 100
 
     tmp_img_obj = io.BytesIO()
-    save_img(tmp_img_obj, im, no_subsampling, f_suffix, quality, to_jpeg)
+    save_img(tmp_img_obj, im, no_subsampling, f_suffix, quality, to_jpeg,
+             optimize)
+
+    if div_by or size:
+        if div_by:
+            size = [int(x // div_by) for x in im.size]
+        im = im.resize(size)
 
     compressed_size = str(sys.getsizeof(tmp_img_obj) / 1000)[:5]
 
@@ -142,7 +143,8 @@ def compress(file: str,
             out_file = Path(out_file).with_suffix(original_file_suffix)
         else:
             out_file = Path(out_file).with_suffix('.jpg')
-        save_img(out_file, im, no_subsampling, f_suffix, quality, to_jpeg)
+        save_img(out_file, im, no_subsampling, f_suffix, quality, to_jpeg,
+                 optimize)
 
     if to_jpeg and overwrite:
         if Path(out_file).name != file.name:
@@ -180,7 +182,7 @@ def opts() -> argparse.Namespace:
                         action='store_true',
                         help='Overwrite the original image')
     parser.add_argument(
-        '-N',
+        '-n',
         '--no-subsampling',
         action='store_true',
         help='Turn off subsampling and retain the original image setting '
@@ -194,9 +196,22 @@ def opts() -> argparse.Namespace:
         action='store_true',
         help='Replicate the source directory tree in the output')
     parser.add_argument('-s',
+                        '--size',
+                        nargs=2,
+                        type=int,
+                        help='Resize the image to WIDTH HEIGHT')
+    parser.add_argument('-d',
+                        '--div-by',
+                        type=float,
+                        help='Divide the image size (WxH) by a factor of n')
+    parser.add_argument('-S',
                         '--silent',
                         action='store_true',
                         help='Silent mode')
+    parser.add_argument('-O',
+                        '--optimize',
+                        action='store_true',
+                        help='Apply default optimization on the image(s)')
     parser.add_argument(
         'path',
         nargs='+',
@@ -211,9 +226,15 @@ def rayim(path: list,
           silent=False,
           overwrite=False,
           to_jpeg=False,
-          replicate_dir_tree=False) -> Union[list, Optional[str]]:
+          replicate_dir_tree=False,
+          size=None,
+          div_by=None,
+          optimize=False) -> Union[list, Optional[str]]:
     session_start = time.time()
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
+
+    if div_by and size:
+        raise Exception('Can\'t use both `size` and `div_by`!')
 
     if silent:
         sys.stdout = None
@@ -260,14 +281,15 @@ def rayim(path: list,
             if replicate_dir_tree:
                 overwrite = True
             futures.append(
-                compress_many.remote(
-                    file=file,
-                    quality=quality,
-                    overwrite=overwrite,
-                    no_subsampling=no_subsampling,
-                    output_dir=output_dir,
-                    to_jpeg=to_jpeg,
-                ))
+                compress_many.remote(file=file,
+                                     quality=quality,
+                                     overwrite=overwrite,
+                                     no_subsampling=no_subsampling,
+                                     output_dir=output_dir,
+                                     to_jpeg=to_jpeg,
+                                     size=size,
+                                     div_by=div_by,
+                                     optimize=optimize))
         results = []
         for future in tqdm(futures):
             result = ray.get(future)
@@ -276,14 +298,15 @@ def rayim(path: list,
         ray.shutdown()
 
     else:
-        return compress(
-            file=files[0],
-            quality=quality,
-            overwrite=overwrite,
-            no_subsampling=no_subsampling,
-            output_dir=output_dir,
-            to_jpeg=to_jpeg,
-        )
+        return compress(file=files[0],
+                        quality=quality,
+                        overwrite=overwrite,
+                        no_subsampling=no_subsampling,
+                        output_dir=output_dir,
+                        to_jpeg=to_jpeg,
+                        size=size,
+                        div_by=div_by,
+                        optimize=optimize)
 
     files_size = round(sum([x[1] for x in results]), 2) / 1e+6
     results_size = round(sum([x[2] for x in results]), 2) / 1e+6
@@ -305,7 +328,10 @@ def main() -> None:
               silent=args.silent,
               replicate_dir_tree=args.replicate_dir_tree,
               overwrite=args.overwrite,
-              to_jpeg=args.to_jpeg)
+              to_jpeg=args.to_jpeg,
+              size=args.size,
+              div_by=args.div_by,
+              optimize=args.optimize)
 
 
 if __name__ == '__main__':

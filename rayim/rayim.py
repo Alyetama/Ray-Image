@@ -5,15 +5,16 @@ import argparse
 import copy
 import imghdr
 import io
+import shutil
 import signal
 import sys
 import time
 from glob import glob
 from pathlib import Path
-from typing import IO, Optional, Union
+from typing import IO, Optional, Tuple, Union
 
 import ray
-from PIL import Image
+from PIL import Image, JpegImagePlugin, PngImagePlugin
 from tqdm import tqdm
 
 
@@ -53,6 +54,18 @@ def save_img(file_object: Union[IO, Path,
         im.save(file_object, f_suffix, optimize=True, quality=quality)
 
 
+def resize(im: Union[JpegImagePlugin.JpegImageFile,
+                     PngImagePlugin.PngImageFile],
+           size: Optional[Tuple[int]] = None,
+           div_by: Optional[int] = None):
+    if div_by and size:
+        raise Exception('Can\'t use both `size` and `div_by`!')
+    if div_by and not size:
+        size = [int(x / div_by) for x in im.size]
+    resized_im = im.resize(size, resample=2)
+    return resized_im
+
+
 def compress(file: str,
              quality: int = 70,
              overwrite: bool = False,
@@ -75,6 +88,8 @@ def compress(file: str,
         return
 
     file = Path(file)
+    original_file_suffix = file.suffix
+    size_1 = Path(file).stat().st_size
 
     original_size = str(Path(file).stat().st_size / 1000)[:5]
 
@@ -123,12 +138,17 @@ def compress(file: str,
                                         float(compressed_size))
 
     if change_exists:
-        out_file = Path(out_file).with_suffix('.jpg')
+        if not to_jpeg:
+            out_file = Path(out_file).with_suffix(original_file_suffix)
+        else:
+            out_file = Path(out_file).with_suffix('.jpg')
         save_img(out_file, im, no_subsampling, f_suffix, quality, to_jpeg)
 
     if to_jpeg and overwrite:
         if Path(out_file).name != file.name:
             file.unlink()
+
+    size_2 = Path(out_file).stat().st_size
 
     took = round(time.time() - start, 2)
     if sys.stdout.isatty():
@@ -136,7 +156,7 @@ def compress(file: str,
     else:
         print(f'🚀 {display_fname}: {original_size} kB ==> {compressed_size} '
               f'kB {change} | {took}s')
-    return out_file
+    return out_file, size_1, size_2
 
 
 @ray.remote
@@ -169,6 +189,10 @@ def opts() -> argparse.Namespace:
                         '--to-jpeg',
                         action='store_true',
                         help='Convert the image(s) to .JPEG')
+    parser.add_argument(
+        '--replicate-dir-tree',
+        action='store_true',
+        help='Replicate the source directory tree in the output')
     parser.add_argument('-s',
                         '--silent',
                         action='store_true',
@@ -186,7 +210,8 @@ def rayim(path: list,
           no_subsampling=False,
           silent=False,
           overwrite=False,
-          to_jpeg=False) -> Union[list, Optional[str]]:
+          to_jpeg=False,
+          replicate_dir_tree=False) -> Union[list, Optional[str]]:
     session_start = time.time()
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
@@ -223,9 +248,17 @@ def rayim(path: list,
     if quality > 100:
         raise AssertionError('`--quality` value can\'t be higher then 100!')
 
+    if replicate_dir_tree:
+        if len(path) > 1:
+            raise AssertionError(
+                'Can only replicate source tree for one input directory!')
+        shutil.copytree(path[0], f'{path[0]}_original')
+
     if len(files) > 1:
         futures = []
         for file in files:
+            if replicate_dir_tree:
+                overwrite = True
             futures.append(
                 compress_many.remote(
                     file=file,
@@ -252,14 +285,8 @@ def rayim(path: list,
             to_jpeg=to_jpeg,
         )
 
-    files = [x for x in files if x]
-    files_size = round(
-        sum([Path(x).stat().st_size
-             for x in files if Path(x).exists()]) / 1e+6, 2)
-    results = [str(x) for x in results if x]
-    results_size = round(
-        sum([Path(x).stat().st_size
-             for x in results if Path(x).exists()]) / 1e+6, 2)
+    files_size = round(sum([x[1] for x in results]), 2) / 1e+6
+    results_size = round(sum([x[2] for x in results]), 2) / 1e+6
 
     change = size_change(files_size, results_size)
     print('\nTotal:')
@@ -276,6 +303,7 @@ def main() -> None:
               quality=args.quality,
               no_subsampling=args.no_subsampling,
               silent=args.silent,
+              replicate_dir_tree=args.replicate_dir_tree,
               overwrite=args.overwrite,
               to_jpeg=args.to_jpeg)
 

@@ -25,8 +25,9 @@ pip install rayim
 ## ⌨️ Usage
 
 ```
-usage: rayim [-h] [-o OUTPUT_DIR] [-q QUALITY] [--overwrite] [-N] [-j] [-s]
-           path [path ...]
+usage: rayim [-h] [-o OUTPUT_DIR] [-q QUALITY] [--overwrite] [-n] [-j]
+             [--replicate-dir-tree] [-s SIZE SIZE] [-d DIV_BY] [-S] [-O]
+             path [path ...]
 
 positional arguments:
   path                  Path to a single file/directory or multiple
@@ -39,10 +40,16 @@ optional arguments:
   -q QUALITY, --quality QUALITY
                         Output image quality (JPEG only; default: 70)
   --overwrite           Overwrite the original image
-  -N, --no-subsampling  Turn off subsampling and retain the original image
+  -n, --no-subsampling  Turn off subsampling and retain the original image
                         setting (JPEG only)
   -j, --to-jpeg         Convert the image(s) to .JPEG
-  -s, --silent          Silent mode
+  --replicate-dir-tree  Replicate the source directory tree in the output
+  -s SIZE SIZE, --size SIZE SIZE
+                        Resize the image to WIDTH HEIGHT
+  -d DIV_BY, --div-by DIV_BY
+                        Divide the image size (WxH) by a factor of n
+  -S, --silent          Silent mode
+  -O, --optimize        Apply default optimization on the image(s)
 ```
 
 ## 📕 Examples

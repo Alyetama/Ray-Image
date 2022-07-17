@@ -33,7 +33,7 @@ positional arguments:
   path                  Path to a single file/directory or multiple
                         files/directories
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -o OUTPUT_DIR, --output-dir OUTPUT_DIR
                         Output directory (default: next to original file)

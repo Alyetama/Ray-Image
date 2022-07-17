@@ -90,8 +90,10 @@ def compress(file: str,
 
     if overwrite:
         out_file = copy.deepcopy(file)
+    elif to_jpeg:
+        out_file = f'{file.with_suffix("")}_compressed.jpg'
     else:
-        out_file = f'{file.with_suffix("")}_compressed{file.suffix}'
+        out_file = f'{file.with_suffix("")}_compressed{original_file_suffix}'
 
     if output_dir:
         out_file = f'{file.with_suffix("")}{file.suffix}'
@@ -138,11 +140,11 @@ def compress(file: str,
     change, change_exists = size_change(float(original_size),
                                         float(compressed_size))
 
+    if not to_jpeg:
+        out_file = Path(out_file).with_suffix(original_file_suffix)
+    else:
+        out_file = Path(out_file).with_suffix('.jpg')
     if change_exists:
-        if not to_jpeg:
-            out_file = Path(out_file).with_suffix(original_file_suffix)
-        else:
-            out_file = Path(out_file).with_suffix('.jpg')
         save_img(out_file, im, no_subsampling, f_suffix, quality, to_jpeg,
                  optimize)
 
@@ -150,7 +152,10 @@ def compress(file: str,
         if Path(out_file).name != file.name:
             file.unlink()
 
-    size_2 = Path(out_file).stat().st_size
+    if Path(out_file).exists():
+        size_2 = Path(out_file).stat().st_size
+    else:
+        size_2 = size_1
 
     took = round(time.time() - start, 2)
     if sys.stdout.isatty():

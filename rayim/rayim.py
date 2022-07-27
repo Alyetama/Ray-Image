@@ -104,6 +104,11 @@ def compress(file: str,
 
     im = Image.open(file)
 
+    if div_by or size:
+        if div_by:
+            size = [int(x // div_by) for x in im.size]
+        im = im.resize(size)
+
     if file.suffix:
         if file.suffix.lower() in ['.jpg', '.jpeg']:
             f_suffix = 'JPEG'
@@ -118,11 +123,6 @@ def compress(file: str,
     tmp_img_obj = io.BytesIO()
     save_img(tmp_img_obj, im, no_subsampling, f_suffix, quality, to_jpeg,
              optimize)
-
-    if div_by or size:
-        if div_by:
-            size = [int(x // div_by) for x in im.size]
-        im = im.resize(size)
 
     compressed_size = str(sys.getsizeof(tmp_img_obj) / 1000)[:5]
 

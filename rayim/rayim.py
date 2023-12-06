@@ -45,6 +45,7 @@ def save_img(file_object: Union[IO, Path, str],
              quality: int,
              to_jpeg: bool,
              optimize: bool = False) -> None:
+
     if no_subsampling and f_suffix == 'JPEG':
         im.save(file_object,
                 f_suffix,
@@ -66,7 +67,8 @@ def compress(file: str,
              size: Optional[Tuple[int]] = None,
              div_by: Optional[float] = None,
              output_dir: Optional[str] = None,
-             optimize: bool = False) -> Optional[str]:
+             optimize: bool = False,
+             keep_date: bool = False) -> Optional[str]:
 
     start = time.time()
 
@@ -82,6 +84,7 @@ def compress(file: str,
               'Skipping...\033[49m')
         return
 
+    _file = file
     file = Path(file)
     original_file_suffix = file.suffix
     size_1 = Path(file).stat().st_size
@@ -157,6 +160,9 @@ def compress(file: str,
     else:
         size_2 = size_1
 
+    if keep_date:
+        shutil.copystat(_file, out_file)
+
     took = round(time.time() - start, 2)
     if sys.stdout.isatty():
         print(f'🚀 {f_name}: {o_size} ==> {c_size} {change} | {took}s')
@@ -218,6 +224,11 @@ def opts() -> argparse.Namespace:
                         action='store_true',
                         help='Apply default optimization on the image(s)')
     parser.add_argument(
+        '-k',
+        '--keep-date',
+        action='store_true',
+        help='Keep the original creation and modification date')
+    parser.add_argument(
         'path',
         nargs='+',
         help='Path to a single file/directory or multiple files/directories')
@@ -234,7 +245,8 @@ def rayim(path: list,
           replicate_dir_tree=False,
           size=None,
           div_by=None,
-          optimize=False) -> Union[list, Optional[str]]:
+          optimize=False,
+          keep_date=False) -> Union[list, Optional[str]]:
     session_start = time.time()
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
@@ -294,7 +306,8 @@ def rayim(path: list,
                                      to_jpeg=to_jpeg,
                                      size=size,
                                      div_by=div_by,
-                                     optimize=optimize))
+                                     optimize=optimize,
+                                     keep_date=keep_date))
         results = []
         for future in tqdm(futures):
             result = ray.get(future)
@@ -311,7 +324,8 @@ def rayim(path: list,
                         to_jpeg=to_jpeg,
                         size=size,
                         div_by=div_by,
-                        optimize=optimize)
+                        optimize=optimize,
+                        keep_date=keep_date)
 
     files_size = round(sum([x[1] for x in results]), 2) / 1e+6
     results_size = round(sum([x[2] for x in results]), 2) / 1e+6
@@ -336,7 +350,8 @@ def main() -> None:
               to_jpeg=args.to_jpeg,
               size=args.size,
               div_by=args.div_by,
-              optimize=args.optimize)
+              optimize=args.optimize,
+              keep_date=args.keep_date)
 
 
 if __name__ == '__main__':

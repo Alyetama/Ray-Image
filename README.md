@@ -6,7 +6,7 @@
 
 ## Requirements
 
-- 🐍 [Python>=3.6](https://www.python.org/downloads/)
+- 🐍 [Python>=3.7](https://www.python.org/downloads/)
 - ⚡ [Ray>=1.0.0](https://github.com/ray-project/ray)
 
 To install `ray`, run\*:

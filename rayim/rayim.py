@@ -5,6 +5,7 @@ import argparse
 import copy
 import imghdr
 import io
+import os
 import shutil
 import signal
 import sys
@@ -84,7 +85,7 @@ def compress(file: str,
               'Skipping...\033[49m')
         return
 
-    _file = file
+    file_stats = os.stat(file)
     file = Path(file)
     original_file_suffix = file.suffix
     size_1 = Path(file).stat().st_size
@@ -161,7 +162,7 @@ def compress(file: str,
         size_2 = size_1
 
     if keep_date:
-        shutil.copystat(_file, out_file)
+        os.utime(out_file, (file_stats.st_atime, file_stats.st_mtime))
 
     took = round(time.time() - start, 2)
     if sys.stdout.isatty():
@@ -227,7 +228,7 @@ def opts() -> argparse.Namespace:
         '-k',
         '--keep-date',
         action='store_true',
-        help='Keep the original creation and modification date')
+        help='Keep the original modification date')
     parser.add_argument(
         'path',
         nargs='+',

@@ -50,7 +50,7 @@ options:
                         Divide the image size (WxH) by a factor of n
   -S, --silent          Silent mode
   -O, --optimize        Apply default optimization on the image(s)
-  -k, --keep-date       Keep the original creation and modification date
+  -k, --keep-date       Keep the original modification date
 ```
 
 ## 📕 Examples

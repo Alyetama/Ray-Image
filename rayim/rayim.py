@@ -340,6 +340,7 @@ def rayim(path: list,
 
 
 def main() -> None:
+    os.environ['RAY_DEDUP_LOGS'] = '0'
     args = opts()
     _ = rayim(path=args.path,
               output_dir=args.output_dir,

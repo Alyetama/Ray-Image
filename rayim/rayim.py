@@ -128,7 +128,8 @@ def compress(file: str,
     save_img(tmp_img_obj, im, no_subsampling, f_suffix, quality, to_jpeg,
              optimize)
 
-    compressed_size = str(sys.getsizeof(tmp_img_obj) / 1000)[:5]
+    compressed_kb = tmp_img_obj.getbuffer().nbytes / 1000
+    compressed_size = f"{compressed_kb:.2f}"
 
     file_stem = Path(file).stem
     if len(file_stem) > 12:
@@ -148,13 +149,16 @@ def compress(file: str,
         out_file = Path(out_file).with_suffix(original_file_suffix)
     else:
         out_file = Path(out_file).with_suffix('.jpg')
-    if change_exists:
+
+    wrote_new = False
+    if compressed_kb < (file.stat().st_size / 1000):
         save_img(out_file, im, no_subsampling, f_suffix, quality, to_jpeg,
                  optimize)
+        wrote_new = True
 
-    if to_jpeg and overwrite:
-        if Path(out_file).name != file.name:
-            file.unlink()
+    if wrote_new and to_jpeg and overwrite and Path(
+            out_file).name != file.name:
+        file.unlink()
 
     if Path(out_file).exists():
         size_2 = Path(out_file).stat().st_size
@@ -224,11 +228,10 @@ def opts() -> argparse.Namespace:
                         '--optimize',
                         action='store_true',
                         help='Apply default optimization on the image(s)')
-    parser.add_argument(
-        '-k',
-        '--keep-date',
-        action='store_true',
-        help='Keep the original modification date')
+    parser.add_argument('-k',
+                        '--keep-date',
+                        action='store_true',
+                        help='Keep the original modification date')
     parser.add_argument(
         'path',
         nargs='+',

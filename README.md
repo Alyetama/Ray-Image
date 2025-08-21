@@ -2,11 +2,11 @@
 
 🚀 Fast image compression for large number of images with Ray library.
 
-[![Supported Python versions](https://img.shields.io/badge/Python-%3E=3.7-blue.svg)](https://www.python.org/downloads/) [![PEP8](https://img.shields.io/badge/Code%20style-PEP%208-orange.svg)](https://www.python.org/dev/peps/pep-0008/) [![Poetry-build](https://github.com/Alyetama/Ray-Image/actions/workflows/poetry-build.yml/badge.svg)](https://github.com/Alyetama/Ray-Image/actions/workflows/poetry-build.yml)
+[![Supported Python versions](https://img.shields.io/badge/Python-%3E=3.8-blue.svg)](https://www.python.org/downloads/) [![PEP8](https://img.shields.io/badge/Code%20style-PEP%208-orange.svg)](https://www.python.org/dev/peps/pep-0008/) [![Poetry-build](https://github.com/Alyetama/Ray-Image/actions/workflows/poetry-build.yml/badge.svg)](https://github.com/Alyetama/Ray-Image/actions/workflows/poetry-build.yml)
 
 ## Requirements
 
-- 🐍 [Python>=3.7](https://www.python.org/downloads/)
+- 🐍 [Python>=3.8](https://www.python.org/downloads/)
 - ⚡ [Ray>=1.0.0](https://github.com/ray-project/ray)
 
 To install `ray`, run\*:
@@ -65,7 +65,7 @@ rayim foo.jpg
 ```shell
 rayim foo/ -o compressed
 # (compress_many pid=612778) 🚀 foo.jpg: 988.9 kB ==> 544.8 kB (-44.9%) | 0.08s
-# (compress_many pid=612828) 🚀 bar.jpg: 983.7 kB ==> 541.2 kB (-44.9%) | 0.07s
+# (compress_many pid=612828) 🚀 bar.jpg: 983.8 kB ==> 541.2 kB (-44.9%) | 0.07s
 # (compress_many pid=612826) 🚀 foobar.jpg: 1001. kB ==> 550.7 kB (-44.9%) | 0.07s
 # (compress_many pid=612786) 🚀 barfoo.jpg: 1001. kB ==> 551.9 kB (-44.8%) | 0.08s
 # ...

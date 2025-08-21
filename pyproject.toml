@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rayim"
-version = "1.8.4"
+version = "1.8.3"
 description = "Fast image compression for large number of images with Ray library"
 authors = ["Mohammad Alyetama <malyetama@pm.me>"]
 license = "MIT"

@@ -4,11 +4,13 @@
 import argparse
 import copy
 import io
+import logging
 import os
 import shutil
 import signal
 import sys
 import time
+import warnings
 from glob import glob
 from pathlib import Path
 from typing import IO, Optional, Tuple, Union
@@ -298,6 +300,11 @@ def rayim(path: list,
         shutil.copytree(path[0], f'{path[0]}_original')
 
     if len(files) > 1:
+        os.environ['RAY_DEDUP_LOGS'] = '0'
+        os.environ['RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO'] = '0'
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            ray.init(logging_level=logging.ERROR)
         futures = []
         for file in files:
             if replicate_dir_tree:
@@ -344,7 +351,6 @@ def rayim(path: list,
 
 
 def main() -> None:
-    os.environ['RAY_DEDUP_LOGS'] = '0'
     args = opts()
     _ = rayim(path=args.path,
               output_dir=args.output_dir,

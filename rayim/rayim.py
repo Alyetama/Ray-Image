@@ -3,7 +3,6 @@
 
 import argparse
 import copy
-import imghdr
 import io
 import os
 import shutil
@@ -29,14 +28,13 @@ def keyboard_interrupt_handler(sig: int, _) -> None:
     sys.exit(1)
 
 
-def size_change(original_size: float, compressed_size: float) -> tuple:
+def size_change(original_size: float, compressed_size: float) -> str:
     change = (compressed_size - original_size) / original_size * 100
     if 0 < change:
-        return (
-            f'(\033[31m+{round(change, 4)}%\033[39m) [\033[33mSkipped...\033['
-            f'39m]', False)
+        return (f'(\033[31m+{round(change, 4)}%\033[39m) [\033[33mSkipped...'
+                f'\033[39m]')
     else:
-        return f'({round(change, 4)}%)', True
+        return f'({round(change, 4)}%)'
 
 
 def save_img(file_object: Union[IO, Path, str],
@@ -69,7 +67,7 @@ def compress(file: str,
              div_by: Optional[float] = None,
              output_dir: Optional[str] = None,
              optimize: bool = False,
-             keep_date: bool = False) -> Optional[str]:
+             keep_date: bool = False) -> Optional[Tuple]:
 
     start = time.time()
 
@@ -80,17 +78,18 @@ def compress(file: str,
         print(f'\033[41m`{file}` does not exist! Skipping...\033[49m')
         return
 
-    if not imghdr.what(file):
+    try:
+        Image.open(file).verify()
+    except Exception:
         print(f'\033[41m`{file}` does not appear to be a valid image file! '
               'Skipping...\033[49m')
         return
 
-    file_stats = os.stat(file)
     file = Path(file)
     original_file_suffix = file.suffix
-    size_1 = Path(file).stat().st_size
-
-    original_size = str(Path(file).stat().st_size / 1000)[:5]
+    file_stat = file.stat()
+    size_1 = file_stat.st_size
+    original_size = size_1 / 1000  # kB as float
 
     if overwrite:
         out_file = copy.deepcopy(file)
@@ -111,7 +110,7 @@ def compress(file: str,
     if div_by or size:
         if div_by:
             size = [int(x // div_by) for x in im.size]
-        im = im.resize(size)
+        im = im.resize(size, Image.LANCZOS)
 
     if file.suffix:
         if file.suffix.lower() in ['.jpg', '.jpeg']:
@@ -139,11 +138,10 @@ def compress(file: str,
         display_fname = Path(file).name
 
     f_name = f'\033[37m\033[40m{display_fname}\033[49m\033[39m'
-    o_size = f'{original_size} kB'
+    o_size = f'{original_size:.2f} kB'
     c_size = f'\033[30m\033[42m{compressed_size} kB\033[49m\033[39m'
 
-    change, change_exists = size_change(float(original_size),
-                                        float(compressed_size))
+    change = size_change(original_size, compressed_kb)
 
     if not to_jpeg:
         out_file = Path(out_file).with_suffix(original_file_suffix)
@@ -167,13 +165,13 @@ def compress(file: str,
 
     if wrote_new and Path(out_file).exists():
         if keep_date:
-            os.utime(out_file, (file_stats.st_atime, file_stats.st_mtime))
+            os.utime(out_file, (file_stat.st_atime, file_stat.st_mtime))
 
     took = round(time.time() - start, 2)
     if sys.stdout.isatty():
         print(f'🚀 {f_name}: {o_size} ==> {c_size} {change} | {took}s')
     else:
-        print(f'🚀 {display_fname}: {original_size} kB ==> {compressed_size} '
+        print(f'🚀 {display_fname}: {original_size:.2f} kB ==> {compressed_size} '
               f'kB {change} | {took}s')
     return out_file, size_1, size_2
 
@@ -259,8 +257,9 @@ def rayim(path: list,
         raise Exception('Can\'t use both `size` and `div_by`!')
 
     if silent:
-        sys.stdout = None
-        sys.stderr = None
+        _devnull = open(os.devnull, 'w')
+        sys.stdout = _devnull
+        sys.stderr = _devnull
 
     if any(Path(x).is_dir() for x in path):
         _files = []
@@ -268,7 +267,8 @@ def rayim(path: list,
             if Path(_input).is_dir():
                 imgs = [
                     glob(f'{_input}/**/*{x}', recursive=True) for x in
-                    ['.jpg', '.JPG', '.jpeg', '.JPEG', '.PNG', '.png']
+                    ['.jpg', '.JPG', '.jpeg', '.JPEG', '.PNG', '.png',
+                     '.webp', '.WEBP']
                 ]
                 imgs = sum(imgs, [])
                 _files.append(imgs)
@@ -338,7 +338,7 @@ def rayim(path: list,
     change = size_change(files_size, results_size)
     print('\nTotal:')
     print(f'    Before: \033[31m{files_size} MB\033[39m')
-    print(f'    After: \033[32m{results_size} MB {change[0]}\033[39m')
+    print(f'    After: \033[32m{results_size} MB {change}\033[39m')
     print(f'Took: {round(time.time() - session_start, 2)}s')
     return results
 

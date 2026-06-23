@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>rayim — Fast parallel image compression</title>
+<meta name="description" content="rayim compresses large numbers of images in parallel using the Ray library. Up to 55% faster than regular compression.">
+<link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+<meta property="og:title" content="rayim — Fast parallel image compression">
+<meta property="og:description" content="Compress thousands of images in parallel with Ray. Up to 55% faster.">
+<meta property="og:image" content="assets/icon.svg">
+<style>
+  :root{
+    --bg:#0d0f1a; --panel:#161a2b; --panel2:#1d2238; --line:#2a3050;
+    --text:#e8eaf2; --muted:#a3a8c0; --accent:#6D5BFF; --accent2:#00C2A8;
+    --ray:#FFB454; --code:#0a0c16;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;
+    background-image:radial-gradient(900px 500px at 80% -10%,rgba(109,91,255,.25),transparent),
+                     radial-gradient(700px 400px at 0% 0%,rgba(0,194,168,.18),transparent);
+  }
+  a{color:var(--accent2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+  header{padding:80px 0 40px;text-align:center}
+  .logo{width:120px;height:120px;filter:drop-shadow(0 12px 30px rgba(109,91,255,.4))}
+  h1{font-size:3rem;margin:18px 0 6px;letter-spacing:-1px}
+  .tag{font-size:1.25rem;color:var(--muted);max-width:620px;margin:0 auto}
+  .badges{margin:22px 0 8px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .badges img{height:22px}
+  .cta{margin-top:28px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-block;padding:13px 26px;border-radius:12px;font-weight:600;font-size:1rem}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  .btn.primary:hover{text-decoration:none;opacity:.92}
+  .btn.ghost{border:1px solid var(--line);color:var(--text)}
+  .btn.ghost:hover{text-decoration:none;border-color:var(--accent2)}
+  section{padding:48px 0}
+  h2{font-size:1.7rem;margin-bottom:24px;letter-spacing:-.5px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px}
+  .card h3{font-size:1.1rem;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:.96rem}
+  .emoji{font-size:1.6rem;display:block;margin-bottom:10px}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:14px;padding:20px 22px;
+      overflow-x:auto;font-size:.92rem;line-height:1.7}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  pre code{color:#d7dcff}
+  .cmt{color:#5f6896}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+  th,td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:var(--panel2);font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  tr:last-child td{border-bottom:none}
+  .fast{color:var(--accent2);font-weight:700}
+  footer{padding:50px 0 70px;text-align:center;color:var(--muted);border-top:1px solid var(--line);margin-top:30px}
+  @media(max-width:600px){h1{font-size:2.2rem}.tag{font-size:1.05rem}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <img class="logo" src="assets/icon.svg" alt="rayim logo">
+    <h1>rayim</h1>
+    <p class="tag">🚀 Fast image compression for a large number of images, powered by the <a href="https://github.com/ray-project/ray">Ray</a> library.</p>
+    <div class="badges">
+      <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-%3E=3.8-blue.svg" alt="Python >=3.8"></a>
+      <a href="https://pypi.org/project/rayim/"><img src="https://img.shields.io/pypi/v/rayim.svg" alt="PyPI version"></a>
+      <a href="https://github.com/Alyetama/Ray-Image/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT license"></a>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="#install">Get started</a>
+      <a class="btn ghost" href="https://github.com/Alyetama/Ray-Image">View on GitHub</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>Why rayim?</h2>
+    <div class="grid">
+      <div class="card"><span class="emoji">⚡</span><h3>Parallel by default</h3><p>Distributes compression across all your CPU cores with Ray — no setup required.</p></div>
+      <div class="card"><span class="emoji">📉</span><h3>~45% smaller</h3><p>Typical JPEG output is roughly half the size with no visible quality loss.</p></div>
+      <div class="card"><span class="emoji">🗂️</span><h3>Files & folders</h3><p>Point it at single files, whole directories, or many of each at once.</p></div>
+      <div class="card"><span class="emoji">🔧</span><h3>Flexible</h3><p>Resize, convert to JPEG, optimize, replicate directory trees, and more.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Installation</h2>
+    <pre><code>pip install rayim</code></pre>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Usage</h2>
+    <pre><code><span class="cmt"># Compress a single file</span>
+rayim foo.jpg
+<span class="cmt"># 🚀 foo.jpg: 1157. kB ==> 619.9 kB (-46.4%) | 0.07s</span>
+
+<span class="cmt"># Compress a folder, writing output to ./compressed</span>
+rayim foo/ -o compressed
+
+<span class="cmt"># Resize to 800x600 and convert to JPEG</span>
+rayim foo/ -s 800 600 -j</code></pre>
+    <p style="margin-top:16px;color:var(--muted)">Run <code>rayim -h</code> to see every option — quality, subsampling, optimize, keep-date, and more.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Speed comparison</h2>
+    <table>
+      <thead><tr><th>Method</th><th>Files</th><th>Hardware</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td>Regular compression</td><td>1,000</td><td>Apple M1 (8 cores)</td><td>60.090s</td></tr>
+        <tr><td>rayim</td><td>1,000</td><td>Apple M1 (8 cores)</td><td class="fast">26.937s (55% faster)</td></tr>
+        <tr><td>Regular compression</td><td>6,000</td><td>Intel 2.3GHz (32 cores)</td><td>7m42.9s</td></tr>
+        <tr><td>rayim</td><td>6,000</td><td>Intel 2.3GHz (32 cores)</td><td class="fast">5m15.4s (32% faster)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>MIT Licensed · Built with <a href="https://github.com/ray-project/ray">Ray</a> · <a href="https://github.com/Alyetama/Ray-Image">Source on GitHub</a></p>
+  </div>
+</footer>
+</body>
+</html>

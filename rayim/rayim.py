@@ -31,6 +31,8 @@ def keyboard_interrupt_handler(sig: int, _) -> None:
 
 
 def size_change(original_size: float, compressed_size: float) -> str:
+    if not original_size:
+        return '(0%)'
     change = (compressed_size - original_size) / original_size * 100
     if 0 < change:
         return (f'(\033[31m+{round(change, 4)}%\033[39m) [\033[33mSkipped...'
@@ -285,7 +287,10 @@ def rayim(path: list,
     else:
         files = path
 
-    files = [x for x in files if Path(x).exists()]
+    # De-duplicate while preserving order. On case-insensitive filesystems
+    # (macOS, Windows) globbing both lower- and upper-case extensions returns
+    # the same files twice, which would otherwise compress each image twice.
+    files = list(dict.fromkeys(x for x in files if Path(x).exists()))
     if not files:
         print('Found no existing files to process.')
         sys.exit(0)
